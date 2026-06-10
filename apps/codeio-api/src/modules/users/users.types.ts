@@ -8,3 +8,11 @@ export interface User {
 export interface GetUserParams {
   id: string;
 }
+
+export interface CreateUser {
+  clerkId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  imageUrl: string;
+}

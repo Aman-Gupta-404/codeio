@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { clerkMiddleware } from "@clerk/express";
+
 import { errorHandler } from "./middleware/error-handler";
 
 import usersRoutes from "./modules/users/users.routes";
@@ -8,7 +10,6 @@ import { asyncHandler } from "./utils/async-handler";
 const app = express();
 
 app.use(cors());
-app.use(express.json());
 
 // routes
 
@@ -19,6 +20,8 @@ app.get("/api/health", (_, res) => {
   });
 });
 
+app.use(express.json());
+app.use(clerkMiddleware());
 app.use("/api/v1/users", asyncHandler(usersRoutes));
 
 // error handler middleware

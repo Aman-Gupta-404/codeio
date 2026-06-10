@@ -13,9 +13,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clerk/express": "^2.1.24",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "mongoose": "^9.7.0",
+    "random-word-slugs": "^0.1.7",
+    "svix": "^1.95.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
