@@ -3,15 +3,19 @@ import * as projectRepository from "./projects.repository";
 
 export const createProject = async (project: {
   title: string;
+  userId: string;
   language: string;
 }) => {
-  const { title, language } = project;
+  console.log("h1");
+  const { title, language, userId } = project;
   const slug = generateSlug(4, { format: "kebab" });
-  // 1. add project to DB
+
+  // 2. add project to DB
   const result = await projectRepository.createProject({
     title,
     language,
     slug,
+    userId,
   });
 
   // 2. start the kubernetes pod

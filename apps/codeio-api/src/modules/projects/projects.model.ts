@@ -1,10 +1,18 @@
-import mongoose, { Schema, type Document } from "mongoose";
+import mongoose, {
+  Mongoose,
+  Schema,
+  type Document,
+  type ObjectId,
+} from "mongoose";
 
+type projectStatus = "down" | "starting" | "running" | "stopping";
 export interface IProject extends Document {
   title: string;
   slug: string;
   language: string;
   assetsUrl: string | null;
+  userId: ObjectId | string;
+  status: projectStatus;
 
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +30,16 @@ const ProjectSchema = new Schema<IProject>(
       type: String,
       required: true,
       unique: true,
+    },
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+
+    status: {
+      type: String,
+      default: "down",
     },
 
     assetsUrl: String,

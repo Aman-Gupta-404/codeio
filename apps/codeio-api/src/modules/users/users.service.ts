@@ -5,24 +5,9 @@ import { User } from "./users.types";
 import * as userRepository from "./users.repository";
 import { AppError } from "../../errors/app-error";
 
-export const getUserById = async (id: string): Promise<User | null> => {
-  const users: User[] = [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      createdAt: new Date(),
-    },
-    {
-      id: "2",
-      name: "Jane Doe",
-      email: "jane@example.com",
-      createdAt: new Date(),
-    },
-  ];
-
-  const user = users.find((u) => u.id === id);
-  return user || null;
+export const getUserByClerkId = async (id: string) => {
+  const user = await userRepository.getUserByClerkId(id);
+  return user;
 };
 
 export const handleClerkWebhook = async (req: Request, res: Response) => {

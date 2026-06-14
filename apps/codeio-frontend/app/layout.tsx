@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono, Inter } from "next/font/google";
 import {
   ClerkProvider,
   Show,
@@ -7,9 +7,14 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { AxiosProvider } from "@/components/providers/axios-provider";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -44,13 +49,24 @@ export default function RootLayout({
         "antialiased",
         geistSans.variable,
         geistMono.variable,
-        "font-mono",
         jetbrainsMono.variable,
+        "font-sans",
+        inter.variable,
       )}
+      suppressHydrationWarning
     >
-      <ClerkProvider>
-        <body className="min-h-full flex flex-col">{children}</body>
-      </ClerkProvider>
+      <ThemeProvider>
+        <Toaster />
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          afterSignOutUrl="/"
+        >
+          <AxiosProvider>
+            <body className="min-h-full flex flex-col">{children}</body>
+          </AxiosProvider>
+        </ClerkProvider>
+      </ThemeProvider>
     </html>
   );
 }

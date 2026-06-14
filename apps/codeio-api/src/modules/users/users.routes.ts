@@ -2,16 +2,17 @@ import express, { Router } from "express";
 
 import { validate } from "../../middleware/validate";
 import { getUserSchema } from "./users.validation";
-import { getSingleUser } from "./users.controller";
+import { handleClerkWebhook } from "./users.controller";
 
 const router = Router();
 
-router.get("/:id", validate(getUserSchema), getSingleUser);
+// router.get("/:id", validate(getUserSchema), getSingleUser);
 
-router.get(
-  "/auth/webhook",
+router.post(
+  // "/auth/webhook",
+  "/webhook",
   express.raw({ type: "application/json" }),
-  getSingleUser,
+  handleClerkWebhook,
 );
 
 export default router;
