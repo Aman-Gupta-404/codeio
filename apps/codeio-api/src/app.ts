@@ -8,6 +8,7 @@ import usersRoutes from "./modules/users/users.routes";
 import projectsRouts from "./modules/projects/projects.routes";
 
 import { asyncHandler } from "./utils/async-handler";
+import { testFunc } from "@repo/k8s";
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.get("/api/health", (_, res) => {
 
 app.use(express.json());
 app.use(clerkMiddleware());
+
+testFunc();
 
 app.use("/api/v1/users", asyncHandler(usersRoutes));
 app.use("/api/v1/projects", asyncHandler(projectsRouts));

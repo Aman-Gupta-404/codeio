@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  namespace: codeio
+spec:
+  containers:
+    - name: demo-container
+      image: codeio/workspace-node:v1
+      ports:
+        - containerPort: 80

@@ -13,7 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1068.0",
     "@clerk/express": "^2.1.24",
+    "@repo/k8s": "workspace:*",
     "@repo/types": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -21,12 +23,14 @@
     "mongoose": "^9.7.0",
     "random-word-slugs": "^0.1.7",
     "svix": "^1.95.2",
+    "tar-stream": "^3.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.2",
+    "@types/tar-stream": "^3.1.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

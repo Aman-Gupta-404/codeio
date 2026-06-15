@@ -4,3 +4,5 @@ export type CreateProject = CreateProjectType & {
   slug: string;
   userId: string;
 };
+
+export type supportedLanguages = "node" | "python";
