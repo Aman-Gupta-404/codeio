@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "xterm/css/xterm.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -81,6 +82,34 @@
   --sidebar-ring: oklch(0.708 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
+  /* for the editor files */
+  --editor-ts: oklch(0.68 0.18 255);
+  --editor-react: oklch(0.78 0.14 220);
+  --editor-js: oklch(0.88 0.17 95);
+
+  --editor-css: oklch(0.68 0.2 250);
+  --editor-scss: oklch(0.72 0.22 330);
+  --editor-less: oklch(0.65 0.2 285);
+
+  --editor-html: oklch(0.7 0.23 40);
+  --editor-md: oklch(0.75 0.04 260);
+
+  --editor-json: oklch(0.72 0.18 150);
+  --editor-yaml: oklch(0.7 0.15 190);
+  --editor-xml: oklch(0.72 0.18 25);
+  --editor-env: oklch(0.75 0.15 140);
+
+  --editor-vue: oklch(0.76 0.18 150);
+  --editor-svelte: oklch(0.72 0.24 45);
+
+  --editor-python: oklch(0.74 0.16 240);
+  --editor-java: oklch(0.68 0.22 30);
+  --editor-go: oklch(0.78 0.12 220);
+  --editor-rust: oklch(0.66 0.18 35);
+  --editor-php: oklch(0.7 0.14 290);
+
+  --editor-shell: oklch(0.76 0.15 145);
 }
 
 .dark {
@@ -127,4 +156,11 @@
   html {
     @apply font-sans;
   }
+}
+
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .margin,
+.monaco-editor .monaco-scrollable-element {
+  background-color: var(--background) !important;
 }

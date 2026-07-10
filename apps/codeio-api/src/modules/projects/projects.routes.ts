@@ -5,7 +5,6 @@ import * as projectController from "./projects.controller";
 import { validate } from "../../middleware/validate";
 import { createProjectSchema } from "./projects.validation";
 import { requireAuthMiddleware } from "../../middleware/auth-middleware";
-import { requireAuth } from "@clerk/express";
 
 const router = Router();
 
@@ -16,5 +15,15 @@ router.post(
   validate(createProjectSchema),
   projectController.createProject,
 );
+
+// run existing projects
+router.patch(
+  "/:projectId",
+  requireAuthMiddleware,
+  projectController.runProject,
+);
+
+// get users all projects
+router.get("/", requireAuthMiddleware, projectController.getUserProjects);
 
 export default router;

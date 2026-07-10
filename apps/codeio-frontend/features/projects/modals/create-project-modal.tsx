@@ -45,11 +45,11 @@ export function CreateProjectModal({
         title: projName,
         language: selectedLang,
       });
-      console.log({ res });
-      toast.success("Completed the operation");
+      toast.success("Project creaated");
       onOpenChange;
-    } catch (error) {
+    } catch (error: any) {
       console.log({ error });
+      toast.error(error?.message || "Error in creating project");
     }
   };
 
@@ -101,23 +101,6 @@ export function CreateProjectModal({
               ))}
             </div>
           </div>
-
-          {/* Feature to be implemented later: Visibility */}
-          {/* <div className="space-y-2">
-            <label className="text-sm font-medium">Visibility</label>
-
-            <Select defaultValue="private">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="private">Private</SelectItem>
-
-                <SelectItem value="public">Public</SelectItem>
-              </SelectContent>
-            </Select>
-          </div> */}
         </div>
 
         <DialogFooter>

@@ -7,7 +7,7 @@ export default function PrivateLayout({
 }>) {
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       {children}
     </>
   );

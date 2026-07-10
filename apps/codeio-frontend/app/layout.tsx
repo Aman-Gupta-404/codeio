@@ -55,18 +55,18 @@ export default function RootLayout({
       )}
       suppressHydrationWarning
     >
-      <ThemeProvider>
-        <Toaster />
-        <ClerkProvider
-          signInUrl="/sign-in"
-          signUpUrl="/sign-up"
-          afterSignOutUrl="/"
-        >
-          <AxiosProvider>
-            <body className="min-h-full flex flex-col">{children}</body>
-          </AxiosProvider>
-        </ClerkProvider>
-      </ThemeProvider>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>
+          <Toaster />
+          <ClerkProvider
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            afterSignOutUrl="/"
+          >
+            <AxiosProvider>{children}</AxiosProvider>
+          </ClerkProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

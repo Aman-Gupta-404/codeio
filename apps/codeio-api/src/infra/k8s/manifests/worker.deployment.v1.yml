@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-{{PROJECT_ID}}
+  namespace: NAMESPACE
+  labels:
+    app: worker-{{PROJECT_ID}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-{{PROJECT_ID}}
+  template:
+    metadata:
+      labels:
+        app: worker-{{PROJECT_ID}}
+    spec:
+      volumes:
+        - name: workspace-volume
+          persistentVolumeClaim:
+            claimName: workspace-pvc-{{PROJECT_ID}}
+
+      initContainers:
+        - name: workspace-init
+          image: alpine:3.22
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              if [ -z "$(ls -A /workspace 2>/dev/null)" ]; then
+                echo "Workspace is empty. Downloading template..."
+
+                apk add --no-cache curl tar
+
+                mkdir -p /tmp/template
+
+                curl -L "$TEMPLATE_URL" -o /tmp/template/template.tar.gz
+
+                tar -xzf /tmp/template/template.tar.gz -C /workspace
+
+                echo "Template restored."
+              else
+                echo "Workspace already exists. Skipping initialization."
+              fi
+          env:
+            - name: TEMPLATE_URL
+              value: TEMPLATE_URL
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
+      containers:
+        - name: worker
+          image: WORKER_IMAGE
+          # imagePullPolicy: IMAGE_PULL_POLICY
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+            - containerPort: 8080
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
+          resources:
+            # FUTURE Plan: Use ephemeral-storage to add space limits here
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-svc-{{PROJECT_ID}}
+  namespace: NAMESPACE
+spec:
+  selector:
+    app: worker-{{PROJECT_ID}}
+  ports:
+    - protocol: TCP
+      name: ws
+      port: 8080
+      targetPort: 8080
+    - protocol: TCP
+      name: user
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP

@@ -4,8 +4,8 @@ import mongoose, {
   type Document,
   type ObjectId,
 } from "mongoose";
+import { projectStatus } from "./projects.types";
 
-type projectStatus = "down" | "starting" | "running" | "stopping";
 export interface IProject extends Document {
   title: string;
   slug: string;
@@ -23,7 +23,7 @@ const ProjectSchema = new Schema<IProject>(
     title: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true,
     },
 
     slug: {
@@ -34,6 +34,11 @@ const ProjectSchema = new Schema<IProject>(
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+
+    language: {
+      type: String,
       required: true,
     },
 

@@ -68,12 +68,14 @@ export function Navbar() {
           >
             Home
           </Link>
-          <Link
-            href="/projects"
-            className="rounded-md px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            Projects
-          </Link>
+          <Show when={"signed-in"}>
+            <Link
+              href="/projects"
+              className="rounded-md px-3 py-1.5 text-sm hover:bg-accent"
+            >
+              Projects
+            </Link>
+          </Show>
           <Link
             href="/docs"
             className="rounded-md px-3 py-1.5 text-sm hover:bg-accent"
