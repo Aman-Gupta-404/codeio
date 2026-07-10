@@ -6,6 +6,7 @@ import YAML from "yaml";
 
 import { appsV1Api, coreV1Api, kc } from "./client";
 import { KubernetesValues } from "./constants";
+import { AppError } from "../../errors/app-error";
 
 type WorkerEndpoints = {
   websocket: string;
@@ -24,10 +25,19 @@ const imagePullPolicy = process.env.WORKER_IMAGE_PULL_POLICY || "Never";
 
 const workerImage = process.env.WORKER_IMAGE || "workspace-service:latest";
 
+const syncWorkerImage =
+  process.env.WORKSPACE_SYNC_IMAGE || "codeio-workspace-sync:latest";
+
+const r2Bucket = process.env.R2_BUCKET || "codeio";
+
+const r2Endpoint = process.env.R2_ENDPOINT || null;
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ------------------- Create Resources -------------------
 export async function createProjectResources(projectId: string): Promise<void> {
+  if (!r2Endpoint) throw AppError.internal("R2 details not found");
+
   const manifestPath = path.join(
     process.cwd(),
     "src",
@@ -51,9 +61,18 @@ export async function createProjectResources(projectId: string): Promise<void> {
   manifest = manifest
     .replaceAll("{{PROJECT_ID}}", projectId)
     .replaceAll("NAMESPACE", NAMESPACE)
-    // .replaceAll("{ SERVICE_TYPE }", serviceType)
     .replaceAll("IMAGE_PULL_POLICY", imagePullPolicy)
-    .replaceAll("WORKER_IMAGE", workerImage);
+    .replaceAll("WORKER_IMAGE", workerImage)
+    .replaceAll("{{R2_BUCKET}}", r2Bucket)
+    .replaceAll("{{R2_ENDPOINT}}", r2Endpoint)
+    .replaceAll("WORKING_SIZE", "5Gi")
+    .replaceAll("STORAGE_CLASS", "standard")
+    .replaceAll("WORKSPACE_SYNC_IMAGE", syncWorkerImage)
+    .replaceAll("{{SYNC_INTERVAL}}", "60");
+
+  await fs.writeFileSync("./tempManifest.yaml", manifest);
+  // ?NOTE: storage class: Kind -> standard | vltur -> vultr-block-storage
+  // ? DigitalOcean -> do-block-storage
 
   const resources = YAML.parseAllDocuments(manifest)
     .map((doc) => doc.toJSON())
@@ -117,15 +136,75 @@ export async function waitForPod(
   }
 }
 
-async function waitForPodDeletion(
+async function deleteResource(resource: {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    name: string;
+    namespace: string;
+  };
+}) {
+  try {
+    await objectApi.delete(resource);
+    console.log(`Deleted ${resource.kind}/${resource.metadata.name}`);
+  } catch (error: any) {
+    if (error?.body?.reason === "NotFound") {
+      console.log(`${resource.kind}/${resource.metadata.name} already deleted`);
+      return;
+    }
+
+    throw error;
+  }
+}
+
+export async function deleteProjectResources(projectId: string): Promise<void> {
+  // 1. Delete Deployment
+  await deleteResource({
+    apiVersion: "apps/v1",
+    kind: "Deployment",
+    metadata: {
+      name: `worker-${projectId}`,
+      namespace: NAMESPACE,
+    },
+  });
+
+  // 2. Wait for all pods to terminate so the PVC is no longer in use
+  await waitForPodDeletion(projectId);
+
+  // 3. Delete Service
+  await deleteResource({
+    apiVersion: "v1",
+    kind: "Service",
+    metadata: {
+      name: `worker-svc-${projectId}`,
+      namespace: NAMESPACE,
+    },
+  });
+
+  // 4. Delete PVC
+  await deleteResource({
+    apiVersion: "v1",
+    kind: "PersistentVolumeClaim",
+    metadata: {
+      name: `workspace-pvc-${projectId}`,
+      namespace: NAMESPACE,
+    },
+  });
+
+  console.log(`Successfully cleaned up project ${projectId}`);
+}
+
+export async function waitForPodDeletion(
   projectId: string,
-  timeoutMs = 60000,
+  timeoutMs = 120000,
 ): Promise<void> {
   const startedAt = Date.now();
 
   while (true) {
     if (Date.now() - startedAt > timeoutMs) {
-      throw new Error(`Timeout waiting for worker pod deletion`);
+      throw new Error(
+        `Timeout waiting for pod deletion for project ${projectId}`,
+      );
     }
 
     const response = await coreV1Api.listNamespacedPod({
@@ -134,46 +213,13 @@ async function waitForPodDeletion(
     });
 
     if (response.items.length === 0) {
-      console.log(`Worker pod for project ${projectId} deleted`);
-
+      console.log(`Worker pod deleted`);
       return;
     }
 
+    console.log(`Waiting for pod deletion...`);
     await sleep(2000);
   }
-}
-
-export async function stopProjectResources(projectId: string): Promise<void> {
-  const deploymentName = `worker-${projectId}`;
-  const serviceName = `worker-svc-${projectId}`;
-
-  try {
-    await appsV1Api.deleteNamespacedDeployment({
-      namespace: NAMESPACE,
-      name: deploymentName,
-    });
-
-    console.log(`Deleted deployment ${deploymentName}`);
-  } catch (error: any) {
-    if (error?.body?.code !== 404) {
-      throw error;
-    }
-  }
-
-  try {
-    await coreV1Api.deleteNamespacedService({
-      namespace: NAMESPACE,
-      name: serviceName,
-    });
-
-    console.log(`Deleted service ${serviceName}`);
-  } catch (error: any) {
-    if (error?.body?.code !== 404) {
-      throw error;
-    }
-  }
-
-  await waitForPodDeletion(projectId);
 }
 
 // DEV NOTE: If the backend is running inside k8s
@@ -200,31 +246,6 @@ export async function getWorkerNodePort(projectId: string): Promise<number> {
 
   return port;
 }
-
-// ------ OLD
-// export async function getWorkerEndpoint(projectId: string): Promise<any> {
-//   const namespace = process.env.K8S_NAMESPACE || "codeio";
-
-//   if (process.env.NODE_ENV === "production") {
-//     const userApi = `http://worker-svc-${projectId}.${namespace}.svc.cluster.local:3000`;
-
-//     const wsServer = `http://worker-svc-${projectId}.${namespace}.svc.cluster.local:3001`;
-//     // return `http://worker-svc-${projectId}.${namespace}.svc.cluster.local:3000`;
-//     return {
-//       userApi,
-//       wsServer,
-//     };
-//   }
-
-//   const svc = await coreV1Api.readNamespacedService({
-//     namespace,
-//     name: `worker-svc-${projectId}`,
-//   });
-
-//   const nodePort = svc.spec?.ports?.[0]?.nodePort;
-
-//   return `http://localhost:${nodePort}`;
-// }
 
 export async function getWorkerEndpoints(
   projectId: string,

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { projectsApi } from "@/apis/projects/projects.api";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // TODO: This is something that should be loaded from Backend
 const languages = [
@@ -39,13 +40,21 @@ export function CreateProjectModal({
   const [projName, setProjName] = useState("");
   const [selectedLang, setSelectedLang] = useState("Python");
 
+  const router = useRouter();
+
   const handleCreateProject = async () => {
     try {
       const res = await projectsApi.createProject({
         title: projName,
         language: selectedLang,
       });
-      toast.success("Project creaated");
+      console.log({ res });
+      if (res.status === 201) {
+        toast.success("Project creaated");
+        router.push(`/projects/${res.data.projectId}`);
+      } else {
+        toast.error(res.data.error || "Error in creating project");
+      }
       onOpenChange;
     } catch (error: any) {
       console.log({ error });

@@ -2,13 +2,15 @@ import { generateSlug } from "random-word-slugs";
 import * as projectRepository from "./projects.repository";
 import { createWorkspacePod, waitForPodRunning } from "@repo/k8s";
 import { GetUsersProjects, supportedLanguages } from "./projects.types";
-import { fetchFolderFromR2 } from "../../infra/r2";
+import { copyTemplate } from "../../infra/r2";
 import { generateWorkertoken } from "../../infra/tokens";
 
 import {
   waitForPod,
   getWorkerEndpoints,
   createProjectResources,
+  deleteProjectResources,
+  waitForPodDeletion,
 } from "../../infra/k8s/worker";
 import { AppError } from "../../errors/app-error";
 import { WorkspaceStatus } from "../../data/constants";
@@ -29,27 +31,14 @@ export const createProject = async (project: {
     userId,
   });
 
-  // const files = await fetchFolderFromR2("starter-templates/node/");
-  // console.log({ files });
-
-  // starting the k8s pod
   const projectId = result._id.toString();
-  // TODO: Un-comment this later when actually starting the pod
-  // await createProjectResources(projectId);
 
-  // // 2. start the kubernetes pod
-  // await waitForPod(projectId);
-
-  // generate the workspace tokens
-  // const token = generateWorkertoken(userId, projectId);
+  // copy the template in r2 storage
+  await copyTemplate({ projectId, language: language });
 
   return {
-    project: result,
     projectId,
-    // token,
-    token: "123dummytoken",
-    // wsUrl: `wss://${projectId}.ws.localtest.me`,
-    wsUrl: `http://localhost:8080`,
+    project: result,
   };
 };
 
@@ -83,7 +72,7 @@ export const runProject = async ({
     // update the status
     await projectRepository.updateProjectStatus({
       projectId,
-      status: "running",
+      status: WorkspaceStatus.running,
     });
   } else {
     // TODO: later, also check with k8s if pod is running
@@ -102,10 +91,52 @@ export const runProject = async ({
     project: project,
     projectId,
     token,
+    status: WorkspaceStatus.running,
     // NOTE: Use wss in production for secure connection
     // wsUrl: `wss://${projectId}.ws.localtest.me`,
     wsUrl: `ws://${projectId}.ws.localtest.me`,
     // wsUrl: `http://localhost:8080`,
+  };
+};
+
+export const stopProject = async ({
+  projectId,
+  userId,
+}: {
+  projectId: string;
+  userId: string;
+}) => {
+  // 1. Get the existing project with projectId
+  const project = await projectRepository.getUsersProject({
+    projectId,
+    userId,
+  });
+
+  // error check for if project does not exist
+  if (!project) {
+    throw AppError.notFound("Project not found!");
+  }
+
+  // check for if project is already running
+  if (project.status !== WorkspaceStatus.running) {
+    // TODO: check with k8s if it has already stopped, and update if required
+  }
+
+  // delete project resources
+  await deleteProjectResources(projectId);
+  // wait for deletion
+  await waitForPodDeletion(projectId);
+
+  // update the status
+  await projectRepository.updateProjectStatus({
+    projectId,
+    status: WorkspaceStatus.down,
+  });
+
+  return {
+    project: project,
+    projectId,
+    status: WorkspaceStatus.down,
   };
 };
 

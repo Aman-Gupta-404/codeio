@@ -12,7 +12,6 @@ import { AppError } from "../../errors/app-error";
 
 export const createProject = async (project: CreateProject) => {
   const { title, slug, language, userId } = project;
-  console.log({ language });
 
   const proj = await Project.create({
     title,

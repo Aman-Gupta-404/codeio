@@ -81,7 +81,7 @@ export async function copyTemplate({
   language: string;
 }) {
   const templateFolder = language === "node" ? "node" : "python";
-  const sourcePrefix = `templates/${templateFolder}/`;
+  const sourcePrefix = `starter-templates/${templateFolder}/`;
   const destinationPrefix = `projects/${projectId}/`;
 
   let continuationToken: string | undefined;

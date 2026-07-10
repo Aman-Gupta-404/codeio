@@ -1,17 +1,25 @@
 "use client";
 
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import {
   Search,
   Plus,
-  MoreHorizontal,
+  SquarePause,
   Play,
   GitBranchIcon,
+  Loader2,
 } from "lucide-react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,61 +28,90 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
-import { CreateProjectModal } from "@/features/projects/modals/create-project-modal";
 import { Project } from "@/features/projects/types";
 import { projectsApi } from "@/apis/projects/projects.api";
-import { toast } from "sonner";
+import { ProjectOptions } from "@/features/projects/components/projectOptions";
+import { CreateProjectModal } from "@/features/projects/modals/create-project-modal";
+import { useRouter } from "next/navigation";
 
-const projects = [
-  {
-    id: 1,
-    name: "AI Dashboard",
-    description: "Analytics and reporting platform",
-    language: "TypeScript",
-    updated: "2h ago",
-    status: "running",
-  },
-  {
-    id: 2,
-    name: "Internal CRM",
-    description: "Customer relationship management system",
-    language: "Python",
-    updated: "5h ago",
-    status: "idle",
-  },
-  {
-    id: 3,
-    name: "Mobile API",
-    description: "Backend services for mobile applications",
-    language: "Go",
-    updated: "1 day ago",
-    status: "running",
-  },
-];
+type StatusLoadingtype = {
+  loading: boolean;
+  projectId: null | string;
+};
 
 export default function ProjectsPage() {
   const [openCreateProject, setOpenCreateProject] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [statusLoading, setStatusLoading] = useState<StatusLoadingtype>({
+    loading: false,
+    projectId: null,
+  });
+
+  const router = useRouter();
 
   const fetchProjects = async () => {
     try {
       setFetching(true);
       const result = await projectsApi.getUsersProjects({});
-      console.log({ projects });
+
       if (result.status === 200) {
-        setProjects(result.data.data);
+        const data = result.data.data.map((p: Project & { _id: string }) => ({
+          ...p,
+          id: p._id,
+        }));
+        setProjects(data);
       } else {
-        toast.error("Something went wrong, couldnt fetch the tests");
+        toast.error("Something went wrong, couldnt fetch the projects");
         setProjects([]);
       }
     } catch (err: any) {
       toast.error(
-        err?.message || "Something went wrong, couldnt fetch the tests",
+        err?.message || "Something went wrong, couldnt fetch the projects",
       );
     } finally {
       setFetching(false);
+    }
+  };
+
+  const handleDeleteProject = () => {
+    toast.warning("Feature not yet available");
+  };
+
+  const handlePlayProject = (projectId: string) => {
+    if (!projectId) {
+      toast.error("No project found");
+    }
+
+    router.push(`/projects/${projectId}`);
+  };
+
+  const handleStopProject = async (projectId: string) => {
+    if (!projectId) {
+      toast.error("No project found");
+    }
+
+    setStatusLoading({ loading: true, projectId });
+    try {
+      const res = await projectsApi.runProject({ projectId, status: "stop" });
+      if (res.status === 200) {
+        const d = res.data;
+        if (d.status === "down") {
+          toast.success("Project stopped successfully!");
+          setProjects((p) =>
+            p.map((item) => {
+              if (item.id !== projectId) return item;
+              return { ...item, status: "stopped" };
+            }),
+          );
+        }
+      } else {
+        toast.error(res?.data?.error || "Error in stopping the project");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Error in stopping the project");
+    } finally {
+      setStatusLoading({ loading: false, projectId: null });
     }
   };
 
@@ -161,9 +198,9 @@ export default function ProjectsPage() {
                   </div>
                 </div>
               ))
-            : projects.map((project) => (
+            : projects.map((project, i) => (
                 <div
-                  key={project.id}
+                  key={`${project.id}-${i}`}
                   className="group flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/50"
                 >
                   {/* Icon */}
@@ -188,28 +225,62 @@ export default function ProjectsPage() {
                       {project.updated}
                     </div>
 
-                    <div
-                      className={`h-2 w-2 rounded-full ${
-                        project.status === "running"
-                          ? "bg-green-500"
-                          : "bg-zinc-400"
-                      }`}
-                    />
+                    {statusLoading.projectId === project.id &&
+                    statusLoading.loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          project.status === "running"
+                            ? "bg-green-500"
+                            : "bg-red-400"
+                        }`}
+                      />
+                    )}
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button size="icon" variant="ghost">
-                      <Play className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={
+                            statusLoading.projectId === project.id &&
+                            statusLoading.loading
+                          }
+                          onClick={() => {
+                            if (project.status === "running") {
+                              handleStopProject(project.id);
+                            } else {
+                              handlePlayProject(project.id);
+                            }
+                          }}
+                        >
+                          {project.status === "running" ? (
+                            <SquarePause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {project.status === "running"
+                            ? "Stop the project"
+                            : "Run the project"}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                    <Button size="icon" variant="ghost">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    {/* <Button size="icon" variant="ghost"> */}
+                    <ProjectOptions onDelete={handleDeleteProject} />
+                    {/* </Button> */}
                   </div>
                 </div>
               ))}
-          {/* {} */}
+          {/* // TODO: Add a no content page and a CTA to create project */}
         </div>
       </Card>
 

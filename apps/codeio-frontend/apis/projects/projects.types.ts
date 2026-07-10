@@ -4,6 +4,7 @@ export interface CreateProjectRequest {
 }
 export interface RunProjectRequest {
   projectId: string;
+  status: "run" | "stop";
 }
 export interface GetUsersProjects {
   page?: number;

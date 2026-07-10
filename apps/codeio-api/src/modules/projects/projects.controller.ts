@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 
 import * as projectService from "./projects.service";
 import { sendSuccess } from "../../utils/api-response";
-import { getAuth } from "@clerk/express";
 import { AppError } from "../../errors/app-error";
 
 export const createProject = async (
@@ -72,6 +71,41 @@ export const getUserProjects = async (
     "Users projects fetched successfully",
     projectsData,
   );
+};
+
+export const execProjectRuntime = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { projectId } = req.params;
+  const { status } = req.body;
+  console.log({ status, projectId });
+
+  if (!projectId) {
+    throw AppError.badRequest("Invalid projectId");
+  }
+  if (!status || !["run", "stop"].includes(status)) {
+    throw AppError.badRequest("Invalid project status");
+  }
+
+  let project;
+  let message: string;
+  if (status === "run") {
+    project = await projectService.runProject({
+      projectId: projectId as string,
+      userId: req.user?._id || "",
+    });
+    message = "Project started successfully";
+  } else {
+    project = await projectService.stopProject({
+      projectId: projectId as string,
+      userId: req.user?._id || "",
+    });
+    message = "Project stopped successfully";
+  }
+
+  return sendSuccess(res, 200, message, project);
 };
 
 export const getProjectEndpoints = async (

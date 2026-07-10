@@ -32,7 +32,7 @@ export default function ClientLayout({ children, projectId }: Props) {
 
     setLoading(true);
     try {
-      const res = await projectsApi.runProject({ projectId });
+      const res = await projectsApi.runProject({ projectId, status: "run" });
       if (res.status === 200) {
         const d = res.data;
 

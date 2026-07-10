@@ -18,9 +18,9 @@ router.post(
 
 // run existing projects
 router.patch(
-  "/:projectId",
+  "/:projectId/run-time",
   requireAuthMiddleware,
-  projectController.runProject,
+  projectController.execProjectRuntime,
 );
 
 // get users all projects

@@ -13,6 +13,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AxiosProvider } from "@/components/providers/axios-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -63,7 +64,9 @@ export default function RootLayout({
             signUpUrl="/sign-up"
             afterSignOutUrl="/"
           >
-            <AxiosProvider>{children}</AxiosProvider>
+            <TooltipProvider>
+              <AxiosProvider>{children}</AxiosProvider>
+            </TooltipProvider>
           </ClerkProvider>
         </ThemeProvider>
       </body>
