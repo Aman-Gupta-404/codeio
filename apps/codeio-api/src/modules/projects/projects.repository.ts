@@ -97,6 +97,8 @@ export const updateProjectStatus = async ({
     {
       $set: {
         status: status,
+        lastActive: new Date(),
+        updatedAt: new Date(),
       },
     },
   );
@@ -108,4 +110,84 @@ export const updateProjectStatus = async ({
   if (!res.matchedCount) {
     throw AppError.notFound("Project not found");
   }
+};
+
+export const updateLastActive = async ({
+  projectId,
+  userId,
+}: GetUsersProject) => {
+  const proj = await Project.updateOne(
+    {
+      _id: toObjectId(projectId),
+      userId: userId,
+    },
+    {
+      $set: {
+        lastActive: new Date(),
+      },
+    },
+  );
+
+  if (!proj.matchedCount) {
+    throw AppError.notFound("Project not found");
+  }
+
+  return true;
+};
+
+export const stopInactiveWorkspaces = async () => {
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+  const projects = await Project.find({
+    lastActive: {
+      $exists: true,
+      $lt: tenMinutesAgo,
+    },
+    status: "running",
+  });
+
+  const ids = projects.map((p) => p._id);
+
+  if (ids.length > 0) {
+    await Project.updateMany(
+      { _id: { $in: ids } },
+      { $set: { status: "stopping" } },
+    );
+  }
+
+  return projects;
+};
+
+export const markProjectsAsStopped = async (projectIds: string[]) => {
+  await Project.updateMany(
+    {
+      _id: { $in: projectIds },
+    },
+    {
+      $set: { status: "down" },
+    },
+  );
+};
+
+export const getUserAllProjectStatus = async (userId: string) => {
+  const status = await Project.aggregate([
+    {
+      $match: { userId: toObjectId(userId) },
+    },
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        down: [{ $match: { status: "down" } }, { $count: "count" }],
+      },
+    },
+    {
+      $project: {
+        total: { $ifNull: [{ $first: "$total.count" }, 0] },
+        projectsDown: { $ifNull: [{ $first: "$down.count" }, 0] },
+      },
+    },
+  ]);
+
+  console.log({ status });
+
+  return status[0];
 };

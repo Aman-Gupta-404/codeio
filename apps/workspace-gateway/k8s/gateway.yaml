@@ -22,12 +22,15 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: codeio-workspace-gateway:latest
+          image: ghcr.io/aman-gupta-404/codeio-workspace-gateway:v1.0.0
           imagePullPolicy: IfNotPresent
           # replace it with dummy values for production
           env:
             - name: WORKSPACE_SECRET
-              value: myworkersecret_aksldjfalksdfjasdjflasdjfieojslalkdsjfa
+              valueFrom:
+                secretKeyRef:
+                  name: codeio-api-secrets
+                  key: WORKSPACE_SECRET
           ports:
             - containerPort: 3000
           readinessProbe:

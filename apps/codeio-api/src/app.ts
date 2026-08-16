@@ -8,7 +8,6 @@ import usersRoutes from "./modules/users/users.routes";
 import projectsRouts from "./modules/projects/projects.routes";
 
 import { asyncHandler } from "./utils/async-handler";
-import { testFunc } from "@repo/k8s";
 
 const app = express();
 
@@ -23,16 +22,15 @@ app.use(
 );
 
 app.get("/api/health", (_, res) => {
-  res.json({
+  res.status(200).json({
+    status: "ok",
     success: true,
-    message: "API is running",
+    message: "CodeIo API service is running",
   });
 });
 
 app.use(express.json());
 app.use(clerkMiddleware());
-
-testFunc();
 
 app.use("/api/v1/users", asyncHandler(usersRoutes));
 app.use("/api/v1/projects", asyncHandler(projectsRouts));

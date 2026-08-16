@@ -10,16 +10,17 @@ const kc = new k8s.KubeConfig();
  *   ServiceAccount automatically mounted (since this will be inside a pod)
  */
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.K8S_CONFIG === "in-cluster") {
+  // ====== in-cluster Kubernete ========
+  // when using the app inside k8s it will pick up the context on its own
   kc.loadFromCluster();
 } else {
+  // ====== local cluster ========
   kc.loadFromDefault();
-  //TODO: shift this context to env
+
   // NOTE: This context is basically which k8s cluster your node js app will use
   kc.setCurrentContext(process.env.K8S_CONTEXT || "kind-codeio");
 }
-
-// console.log(Object.keys(k8s));
 
 export const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 

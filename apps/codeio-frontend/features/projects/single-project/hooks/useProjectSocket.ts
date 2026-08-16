@@ -36,8 +36,6 @@ export function useProjectSocket({ projectId, onMessage, url }: Options) {
       if (type === "initialize") setConnectionStatus("initializing");
       else if (type === "re-connection") setConnectionStatus("re-connecting");
 
-      // TODO: URL will be dynamic, so its to be updated later
-      // const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!);
       const ws = new WebSocket(url);
 
       wsRef.current = ws;

@@ -1,5 +1,12 @@
 import { Events } from "@/data/events";
-import React, { useCallback, useEffect, useState } from "react";
+import { debounce } from "lodash";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ConnectionStatusTypes,
   FileNode,
@@ -12,29 +19,75 @@ import {
   updateNodeStatus,
 } from "../utils/helper";
 import { toast } from "sonner";
-
-interface Props {
-  connectionStatus: ConnectionStatusTypes;
-}
+import { projectsApi } from "@/apis/projects/projects.api";
 
 type TerminalListener = (data: string) => void;
 
 const terminalListeners = new Set<TerminalListener>();
 
-function useProjectData() {
+const LAST_ACTIVITY_INTERVAL = 5 * 60 * 1000; // 5 min
+
+interface Props {
+  projectId: string;
+}
+
+function useProjectData({ projectId }: Props) {
   const [fileTree, setFileTree] = useState<{
     tree: FileNode[];
     loading: boolean;
   }>({ loading: true, tree: [] });
   const [terminalOutput, setTerminalOutput] = useState("");
+  const [userInactiveModal, setUserInactiveModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<SelectedFileState>({
     path: null,
     content: null,
   });
 
+  const lastUpdatedRef = useRef(0);
+  const userActiveRef = useRef(true);
+
+  // const updateProjectActivity = useCallback(async () => {
+  //   await projectsApi.updateProjectActivity(projectId);
+  // }, [projectId]);
+
+  // const updateProjectActivity = useMemo(() => {
+  //   return debounce(async (type: "auto" | "manual" = "auto") => {
+  //     console.log("here 1.1: ", { type });
+  //     console.log("here 2");
+  //     const now = Date.now();
+
+  //     if (
+  //       type === "auto" &&
+  //       now - lastUpdatedRef.current < LAST_ACTIVITY_INTERVAL
+  //     ) {
+  //       console.log("here 3");
+  //       return;
+  //     }
+
+  //     console.log("here 4");
+
+  //     try {
+  //       const res = await projectsApi.updateProjectActivity(projectId);
+  //       console.log({ res });
+  //       setUserInactiveModal(false);
+  //       userActiveRef.current = false;
+  //       lastUpdatedRef.current = now;
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   }, 1000);
+  // }, [projectId]);
+
+  // useEffect(() => {
+  //   return () => {
+  //     updateProjectActivity.cancel();
+  //   };
+  // }, [updateProjectActivity]);
+
   const handleMessage = useCallback(
     (message: any, connectionStatus: ConnectionStatusTypes) => {
-      //   console.log({ message });
+      // updateProjectActivity(); // when ever the pod send back a message, update the activity
+      userActiveRef.current = true;
       switch (message.event) {
         case Events.GET_TREE:
           setFileTree({ loading: false, tree: message.payload.tree });
@@ -303,15 +356,30 @@ function useProjectData() {
     };
   }, []);
 
+  useEffect(() => {
+    setInterval(() => {
+      if (userInactiveModal) return;
+      if (userActiveRef.current === false) {
+        // show pop-up modal
+        setUserInactiveModal(true);
+      } else {
+        userActiveRef.current = false;
+      }
+      // }, 60000);
+    }, 30000);
+  }, []);
+
   return {
     handleMessage,
     selectedFile,
     terminalOutput,
+    userInactiveModal,
     actions: {
       createNode,
       handleSelectFile,
       subscribeTerminal,
       initializeDeleteNode,
+      updateProjectActivity: () => {},
     },
     fileTree,
   };

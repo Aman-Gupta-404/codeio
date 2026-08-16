@@ -1,0 +1,69 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codeio-ingress
+  namespace: codeio
+
+  annotations:
+    # WebSocket / long-lived connection settings
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: "codeio-workspace-gateway"
+
+    # cert-manager
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+spec:
+  ingressClassName: nginx
+
+  tls:
+    # Main application
+    - hosts:
+        - codeio.amangupta.work
+      secretName: codeio-tls
+
+    # WebSocket wildcard
+    - hosts:
+        - "*.ws.codeio.amangupta.work"
+      secretName: codeio-ws-tls
+
+  rules:
+    # ==========================================
+    # Main application
+    # ==========================================
+    - host: codeio.amangupta.work
+
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: codeio-api
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: codeio-frontend
+                port:
+                  number: 3000
+
+    # ==========================================
+    # Workspace WebSocket connections
+    # ==========================================
+    - host: "*.ws.codeio.amangupta.work"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+
+            backend:
+              service:
+                name: codeio-workspace-gateway
+                port:
+                  number: 80

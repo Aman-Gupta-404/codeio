@@ -1,7 +1,10 @@
 import { apiClient } from "@/lib/apiClient";
 import {
   CreateProjectRequest,
+  GetProjectStatusRequest,
   GetUsersProjects,
+  ProjectStatusResponse,
+  RunProjectEligibilityResponse,
   RunProjectRequest,
 } from "./projects.types";
 import { buildUrlSearchQuery } from "@/lib/parse-query";
@@ -19,4 +22,15 @@ export const projectsApi = {
     apiClient.patch<any>(`${endpoint}/${data.projectId}/run-time`, {
       status: data.status,
     }),
+
+  getProjectStatus: (data: GetProjectStatusRequest) =>
+    apiClient.get<ProjectStatusResponse>(
+      `${endpoint}/${data.projectId}/status?action=${data.action}`,
+    ),
+
+  updateProjectActivity: (projectId: string) =>
+    apiClient.patch<ProjectStatusResponse>(`${endpoint}/${projectId}/activity`),
+
+  getRunProjectEligibility: () =>
+    apiClient.get<RunProjectEligibilityResponse>(`${endpoint}/eligibility`),
 };

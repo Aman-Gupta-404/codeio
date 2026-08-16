@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeio-frontend
+  namespace: codeio
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: codeio-frontend
+
+  template:
+    metadata:
+      labels:
+        app: codeio-frontend
+
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+
+      containers:
+        - name: codeio-frontend
+          image: ghcr.io/aman-gupta-404/codeio-frontend:v1.0.1
+          imagePullPolicy: Always
+
+          env:
+            - name: CLERK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codeio-frontend-secret
+                  key: CLERK_SECRET_KEY
+
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

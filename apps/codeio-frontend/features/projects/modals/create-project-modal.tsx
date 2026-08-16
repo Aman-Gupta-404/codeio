@@ -21,11 +21,13 @@ import {
 import { projectsApi } from "@/apis/projects/projects.api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 // TODO: This is something that should be loaded from Backend
 const languages = [
-  { emoji: "🐍", name: "Python" },
-  { emoji: "🟢", name: "Node" },
+  { emoji: "🐍", icon: "material-icon-theme:python", name: "Python" },
+  { emoji: "🟢", icon: "material-icon-theme:nodejs", name: "Node" },
 ];
 
 interface CreateProjectModalProps {
@@ -38,12 +40,14 @@ export function CreateProjectModal({
   onOpenChange,
 }: CreateProjectModalProps) {
   const [projName, setProjName] = useState("");
+  const [loading, setLoading] = useState(false);
   const [selectedLang, setSelectedLang] = useState("Python");
 
   const router = useRouter();
 
   const handleCreateProject = async () => {
     try {
+      setLoading(true);
       const res = await projectsApi.createProject({
         title: projName,
         language: selectedLang,
@@ -59,6 +63,8 @@ export function CreateProjectModal({
     } catch (error: any) {
       console.log({ error });
       toast.error(error?.message || "Error in creating project");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,7 +81,7 @@ export function CreateProjectModal({
             <label className="text-sm font-medium">Project Name</label>
 
             <Input
-              placeholder="e.g. my-fastapi-service"
+              placeholder="e.g. My fast api service"
               value={projName}
               onChange={(e) => setProjName(e.target.value)}
             />
@@ -92,6 +98,7 @@ export function CreateProjectModal({
                   type="button"
                   onClick={() => setSelectedLang(lang.name)}
                   className={`
+                    flex flex-col justify-center items-center gap-2
                     rounded-lg border p-3 transition
                     hover:bg-accent
                     ${
@@ -101,7 +108,9 @@ export function CreateProjectModal({
                     }
                   `}
                 >
-                  <span className="block text-xl">{lang.emoji}</span>
+                  <Icon icon={lang.icon} width={30} height={30} />
+                  {/* <span className="block text-xl">
+                  </span> */}
 
                   <span className="text-xs text-muted-foreground">
                     {lang.name}
@@ -117,7 +126,10 @@ export function CreateProjectModal({
             Cancel
           </Button>
 
-          <Button onClick={handleCreateProject}>Create Project</Button>
+          <Button onClick={handleCreateProject} disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? "Creating..." : "Create Project"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

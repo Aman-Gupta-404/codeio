@@ -24,52 +24,52 @@ export default function TerminalComponent() {
       // theme: {
       //   background: "#0f172a",
       // },
-      theme:
-        resolvedTheme === "dark"
-          ? {
-              background: "#09090b",
-              foreground: "#fafafa",
-              cursor: "#fafafa",
-              selectionBackground: "#3f3f46",
-              black: "#18181b",
-              red: "#ef4444",
-              green: "#22c55e",
-              yellow: "#eab308",
-              blue: "#3b82f6",
-              magenta: "#a855f7",
-              cyan: "#06b6d4",
-              white: "#f4f4f5",
-              brightBlack: "#52525b",
-              brightRed: "#f87171",
-              brightGreen: "#4ade80",
-              brightYellow: "#facc15",
-              brightBlue: "#60a5fa",
-              brightMagenta: "#c084fc",
-              brightCyan: "#22d3ee",
-              brightWhite: "#ffffff",
-            }
-          : {
-              background: "#ffffff",
-              foreground: "#18181b",
-              cursor: "#18181b",
-              selectionBackground: "#d4d4d8",
-              black: "#000000",
-              red: "#dc2626",
-              green: "#16a34a",
-              yellow: "#ca8a04",
-              blue: "#2563eb",
-              magenta: "#9333ea",
-              cyan: "#0891b2",
-              white: "#e4e4e7",
-              brightBlack: "#71717a",
-              brightRed: "#ef4444",
-              brightGreen: "#22c55e",
-              brightYellow: "#eab308",
-              brightBlue: "#3b82f6",
-              brightMagenta: "#a855f7",
-              brightCyan: "#06b6d4",
-              brightWhite: "#ffffff",
-            },
+      // theme:
+      //   resolvedTheme === "dark"
+      //     ? {
+      //         background: "#09090b",
+      //         foreground: "#fafafa",
+      //         cursor: "#fafafa",
+      //         selectionBackground: "#3f3f46",
+      //         black: "#18181b",
+      //         red: "#ef4444",
+      //         green: "#22c55e",
+      //         yellow: "#eab308",
+      //         blue: "#3b82f6",
+      //         magenta: "#a855f7",
+      //         cyan: "#06b6d4",
+      //         white: "#f4f4f5",
+      //         brightBlack: "#52525b",
+      //         brightRed: "#f87171",
+      //         brightGreen: "#4ade80",
+      //         brightYellow: "#facc15",
+      //         brightBlue: "#60a5fa",
+      //         brightMagenta: "#c084fc",
+      //         brightCyan: "#22d3ee",
+      //         brightWhite: "#ffffff",
+      //       }
+      //     : {
+      //         background: "#ffffff",
+      //         foreground: "#18181b",
+      //         cursor: "#18181b",
+      //         selectionBackground: "#d4d4d8",
+      //         black: "#000000",
+      //         red: "#dc2626",
+      //         green: "#16a34a",
+      //         yellow: "#ca8a04",
+      //         blue: "#2563eb",
+      //         magenta: "#9333ea",
+      //         cyan: "#0891b2",
+      //         white: "#e4e4e7",
+      //         brightBlack: "#71717a",
+      //         brightRed: "#ef4444",
+      //         brightGreen: "#22c55e",
+      //         brightYellow: "#eab308",
+      //         brightBlue: "#3b82f6",
+      //         brightMagenta: "#a855f7",
+      //         brightCyan: "#06b6d4",
+      //         brightWhite: "#ffffff",
+      //       },
     });
 
     terminalInstance.current = term;
@@ -114,10 +114,92 @@ export default function TerminalComponent() {
     return unsubscribe;
   }, [subscribeTerminal]);
 
+  // Update theme when next-themes changes
+  useEffect(() => {
+    if (!terminalInstance.current) return;
+
+    const theme =
+      resolvedTheme === "dark"
+        ? {
+            background: "#09090b",
+            foreground: "#fafafa",
+            cursor: "#fafafa",
+            selectionBackground: "#3f3f46",
+            black: "#18181b",
+            red: "#ef4444",
+            green: "#22c55e",
+            yellow: "#eab308",
+            blue: "#3b82f6",
+            magenta: "#a855f7",
+            cyan: "#06b6d4",
+            white: "#f4f4f5",
+            brightBlack: "#52525b",
+            brightRed: "#f87171",
+            brightGreen: "#4ade80",
+            brightYellow: "#facc15",
+            brightBlue: "#60a5fa",
+            brightMagenta: "#c084fc",
+            brightCyan: "#22d3ee",
+            brightWhite: "#ffffff",
+          }
+        : {
+            background: "#ffffff",
+            foreground: "#18181b",
+            cursor: "#18181b",
+            selectionBackground: "#d4d4d8",
+            black: "#000000",
+            red: "#dc2626",
+            green: "#16a34a",
+            yellow: "#ca8a04",
+            blue: "#2563eb",
+            magenta: "#9333ea",
+            cyan: "#0891b2",
+            white: "#e4e4e7",
+            brightBlack: "#71717a",
+            brightRed: "#ef4444",
+            brightGreen: "#22c55e",
+            brightYellow: "#eab308",
+            brightBlue: "#3b82f6",
+            brightMagenta: "#a855f7",
+            brightCyan: "#06b6d4",
+            brightWhite: "#ffffff",
+          };
+    terminalInstance.current.options.theme = theme;
+
+    // Optional refresh
+    terminalInstance.current.refresh(0, terminalInstance.current.rows - 1);
+  }, [resolvedTheme]);
+
+  // return (
+  //   <div
+  //     ref={terminalRef}
+  //     className="w-full h-full overflow-hidden min-h-0 min-w-0 border-2"
+  //   />
+  // );
+
   return (
-    <div
-      ref={terminalRef}
-      className="w-full h-full overflow-hidden min-h-0 min-w-0 border-2"
-    />
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border bg-background">
+      {/* Header */}
+      <div className="flex h-11 w-full items-center justify-between border-b px-4">
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-sm">Bash</span>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            Active
+          </div>
+        </div>
+
+        <div className="text-xs text-muted-foreground">Terminal</div>
+      </div>
+
+      {/* Terminal */}
+      <div className="min-h-0 w-full flex-1 p-1">
+        <div
+          ref={terminalRef}
+          className="h-full w-full overflow-hidden p-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+        />
+      </div>
+    </div>
   );
 }

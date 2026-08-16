@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeio-workspace-gateway
+  namespace: codeio
+
+# use 2 replicas for production
+# because if you have 1 replica & it fails, all the existing socket connection fails
+# with 2 replicase, there would be a backup
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: codeio-workspace-gateway
+
+  template:
+    metadata:
+      labels:
+        app: codeio-workspace-gateway
+
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+
+      containers:
+        - name: gateway
+          image: ghcr.io/aman-gupta-404/codeio-workspace-gateway:v1.0.0
+          imagePullPolicy: IfNotPresent
+          # replace it with dummy values for production
+          env:
+            - name: WORKSPACE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codeio-api-secrets
+                  key: WORKSPACE_SECRET
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeio-workspace-gateway
+  namespace: codeio
+
+spec:
+  selector:
+    app: codeio-workspace-gateway
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

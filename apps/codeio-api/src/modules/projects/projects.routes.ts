@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import { Router } from "express";
 
 import * as projectController from "./projects.controller";
 
@@ -25,5 +25,26 @@ router.patch(
 
 // get users all projects
 router.get("/", requireAuthMiddleware, projectController.getUserProjects);
+
+// get project status
+router.get(
+  "/:projectId/status",
+  requireAuthMiddleware,
+  projectController.getProjectStatus,
+);
+
+// Update project status
+router.patch(
+  "/:projectId/activity",
+  requireAuthMiddleware,
+  projectController.updateProjectActivity,
+);
+
+// route to check if project can be started
+router.get(
+  "/eligibility",
+  requireAuthMiddleware,
+  projectController.getProjectRunEligibility,
+);
 
 export default router;

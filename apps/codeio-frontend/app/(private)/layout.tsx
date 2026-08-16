@@ -7,8 +7,8 @@ export default function PrivateLayout({
 }>) {
   return (
     <>
-      {/* <Navbar /> */}
-      {children}
+      <Navbar />
+      <main className="pt-14 min-h-screen">{children}</main>
     </>
   );
 }

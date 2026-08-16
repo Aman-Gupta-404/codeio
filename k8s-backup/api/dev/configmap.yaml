@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: codeio-api-config
+  namespace: codeio
+
+# This is to store all the non-sensitive variables
+data:
+  NODE_ENV: "development"
+  PORT: "3001"
+  # k8s related configs
+  K8S_MODE: "in-cluster" #val -> in-cluster | local
+  K8S_CONTEXT: "kind-codeio"
+  K8S_NAMESPACE: "codeio"
+  WORKER_IMAGE: "workspace-service:latest"
+  WORKSPACE_SYNC_IMAGE: "codeio-workspace-sync:latest"
+  WORKER_SERVICE_TYPE: "NodePort"
+  STORAGE_CLASS: "civo-volume"
+  WORKER_IMAGE_PULL_POLICY: "IfNotPresent"

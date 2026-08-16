@@ -1,4 +1,4 @@
-import ClientLayout from "../client-layout";
+import ClientLayout from "./client-layout";
 
 interface Props {
   children: React.ReactNode;

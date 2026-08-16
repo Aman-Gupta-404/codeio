@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import FileExplorer from "@/features/projects/single-project/sections/file-explorer";
 import CodeEditor from "@/features/projects/single-project/sections/code-editor";
 import TerminalComponent from "@/features/projects/single-project/sections/terminal";
+import { useProject } from "@/features/projects/single-project/context/project-context";
+import { ConfirmActivityModal } from "@/features/projects/modals/confirm-activity-modal";
 
 function SingleProject() {
   // Left/Right split (percentage of total width for left panel)
@@ -17,6 +19,8 @@ function SingleProject() {
   const isDraggingH = useRef(false); // horizontal (left/right)
   const isDraggingV = useRef(false); // vertical (terminal/output)
   const isDraggingS = useRef(false); // sidebar width
+
+  const { userInactiveModal, updateProjectActivity } = useProject();
 
   const startDrag = useCallback(
     (type: "horizontal" | "vertical" | "sidebar") => (e: React.MouseEvent) => {
@@ -70,70 +74,73 @@ function SingleProject() {
   }, [leftWidth]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex h-screen w-screen overflow-hidden bg-background text-foreground select-none"
-    >
-      {/* ── LEFT PANEL: File Explorer + Code Editor ── */}
+    <>
       <div
-        className="flex h-full overflow-hidden border-2"
-        style={{ width: `${leftWidth}%` }}
+        ref={containerRef}
+        className="flex h-[calc(100vh-3.5rem)] w-screen overflow-hidden bg-background text-foreground select-none"
       >
-        {/* Sidebar */}
+        {/* ── LEFT PANEL: File Explorer + Code Editor ── */}
         <div
-          className="flex flex-col h-full overflow-hidden border-r border-border bg-muted/30"
-          style={{ width: `${sidebarWidth}%` }}
+          className="flex h-full overflow-hidden border-2"
+          style={{ width: `${leftWidth}%` }}
         >
-          <FileExplorer />
+          {/* Sidebar */}
+          <div
+            className="flex flex-col h-full overflow-hidden border-r border-border bg-muted/30"
+            style={{ width: `${sidebarWidth}%` }}
+          >
+            <FileExplorer />
+          </div>
+
+          {/* Sidebar drag handle */}
+          <div
+            onMouseDown={startDrag("sidebar")}
+            className="w-1 h-full cursor-col-resize bg-border hover:bg-primary/50 transition-colors shrink-0"
+          />
+
+          {/* Code editor */}
+          <div className="flex-1 h-full overflow-hidden">
+            <CodeEditor />
+          </div>
         </div>
 
-        {/* Sidebar drag handle */}
+        {/* Horizontal drag handle (left/right split) */}
         <div
-          onMouseDown={startDrag("sidebar")}
-          className="w-1 h-full cursor-col-resize bg-border hover:bg-primary/50 transition-colors shrink-0"
+          onMouseDown={startDrag("horizontal")}
+          className="w-1 h-full cursor-col-resize bg-border hover:bg-primary/50 transition-colors shrink-0 z-10"
         />
 
-        {/* Code editor */}
-        <div className="flex-1 h-full overflow-hidden">
-          <CodeEditor />
+        {/* ── RIGHT PANEL: Terminal + Output ── */}
+        <div
+          className="flex flex-col h-full overflow-hidden min-h-0"
+          style={{ width: `${100 - leftWidth}%` }}
+        >
+          {/* Output panel (top) */}
+          {/* <div
+            className="overflow-hidden min-h-0"
+            style={{ height: `${100 - terminalHeight}%` }}
+          >
+            <OutputPanel />
+          </div> */}
+
+          {/* Vertical drag handle */}
+          {/* <div
+            onMouseDown={startDrag("vertical")}
+            className="h-1 w-full cursor-row-resize bg-border hover:bg-primary/50 transition-colors shrink-0"
+          /> */}
+
+          {/* Terminal (bottom) */}
+          <div
+            className="flex overflow-hidden min-h-0"
+            // style={{ height: `${terminalHeight}%` }}
+            style={{ height: "100%" }}
+          >
+            {/* <Terminal /> */}
+            <TerminalComponent />
+          </div>
         </div>
       </div>
-
-      {/* Horizontal drag handle (left/right split) */}
-      <div
-        onMouseDown={startDrag("horizontal")}
-        className="w-1 h-full cursor-col-resize bg-border hover:bg-primary/50 transition-colors shrink-0 z-10"
-      />
-
-      {/* ── RIGHT PANEL: Terminal + Output ── */}
-      <div
-        className="flex flex-col h-full overflow-hidden min-h-0"
-        style={{ width: `${100 - leftWidth}%` }}
-      >
-        {/* Output panel (top) */}
-        <div
-          className="overflow-hidden min-h-0"
-          style={{ height: `${100 - terminalHeight}%` }}
-        >
-          {/* <OutputPanel /> */}
-        </div>
-
-        {/* Vertical drag handle */}
-        <div
-          onMouseDown={startDrag("vertical")}
-          className="h-1 w-full cursor-row-resize bg-border hover:bg-primary/50 transition-colors shrink-0"
-        />
-
-        {/* Terminal (bottom) */}
-        <div
-          className="flex overflow-hidden min-h-0"
-          style={{ height: `${terminalHeight}%` }}
-        >
-          {/* <Terminal /> */}
-          <TerminalComponent />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 

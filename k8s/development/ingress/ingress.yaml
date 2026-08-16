@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codeio-ingress
+  namespace: codeio
+
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: codeio.localtest.me
+
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: codeio-api
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: codeio-frontend
+                port:
+                  number: 3000

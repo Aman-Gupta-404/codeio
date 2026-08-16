@@ -1,5 +1,8 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 function Stat({ number, label }: { number: string; label: string }) {
@@ -62,6 +65,7 @@ function CodePreview() {
 }
 
 function Hero() {
+  const router = useRouter();
   return (
     <section className="relative flex min-h-[calc(100vh-56px)] items-center justify-center overflow-hidden px-6 py-16">
       {/* Grid Background */}
@@ -88,7 +92,8 @@ function Hero() {
             className="mb-5 gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-indigo-400"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Now with AI-powered autocomplete
+            {/* Now with AI-powered autocomplete */}
+            Browser based code editor
           </Badge>
 
           <h1 className="mb-5 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
@@ -100,23 +105,30 @@ function Hero() {
           </h1>
 
           <p className="mb-9 max-w-xl text-lg leading-8 text-muted-foreground">
-            A blazing-fast cloud IDE that runs your code instantly — no setup,
-            no config. Just write and execute in 30+ languages.
+            A cloud IDE that runs your code instantly — no setup, no config.
+            Just write and execute.
           </p>
 
           <div className="flex flex-wrap gap-3">
-            <Button size="lg">Start coding free</Button>
-
-            <Button size="lg" variant="outline">
-              View demo →
+            <Button
+              size="lg"
+              onClick={() => {
+                router.push("/projects");
+              }}
+            >
+              Start coding free
             </Button>
+
+            {/* <Button size="lg" variant="outline">
+              View demo →
+            </Button> */}
           </div>
 
-          <div className="mt-10 flex gap-8">
+          {/* <div className="mt-10 flex gap-8">
             <Stat number="2M+" label="Developers" />
             <Stat number="30+" label="Languages" />
             <Stat number="<200ms" label="Cold start" />
-          </div>
+          </div> */}
         </div>
 
         {/* Right Code Window */}

@@ -108,19 +108,55 @@ export const execProjectRuntime = async (
   return sendSuccess(res, 200, message, project);
 };
 
-export const getProjectEndpoints = async (
+export const getProjectStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { projectId } = req.params;
+  const action = req.query.action as "starting" | "stopping";
+
+  if (!projectId) {
+    throw AppError.badRequest("Invalid projectId");
+  }
+
+  // if (!action || !["starting", "stopping"].includes(action)) {
+  if (!action) {
+    throw AppError.badRequest("Invalid action");
+  }
+
+  const statusData = await projectService.getProjectStatus({
+    action,
+    userId: req.user?._id || "",
+    projectId: projectId as string,
+  });
+
+  return sendSuccess(res, 200, "Project status data fetched", statusData);
+};
+
+export const updateProjectActivity = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   const { projectId } = req.params;
 
-  const result = await projectService.getProjectEndpoints(projectId as string);
+  const result = await projectService.updateProjectActivity({
+    projectId: projectId as string,
+    userId: req.user?._id || "",
+  });
 
-  return sendSuccess(
-    res,
-    200,
-    "Project endpoints fetched successfully",
-    result,
+  return sendSuccess(res, 200, "Project status data fetched", result);
+};
+
+export const getProjectRunEligibility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const result = await projectService.getProjectRunEligibility(
+    req.user?._id || "",
   );
+
+  return sendSuccess(res, 200, "Project status data fetched", result);
 };

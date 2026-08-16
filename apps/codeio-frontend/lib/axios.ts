@@ -2,9 +2,9 @@ import axios from "axios";
 import { useAuth } from "@clerk/nextjs";
 
 export const axiosInstance = axios.create({
-  //   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  baseURL: "http://localhost:3001",
-  timeout: 10000,
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "",
+  // baseURL: "http://localhost:3001",
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },

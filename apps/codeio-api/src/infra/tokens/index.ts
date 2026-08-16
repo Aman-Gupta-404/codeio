@@ -14,14 +14,3 @@ export const generateWorkertoken = (userId: string, projectId: string) => {
 
   return token;
 };
-
-/*
-return {
-    projectId,
-
-    wsUrl:
-      `wss://${projectId}.ws.localtest.me`,
-
-    token
-};
-*/

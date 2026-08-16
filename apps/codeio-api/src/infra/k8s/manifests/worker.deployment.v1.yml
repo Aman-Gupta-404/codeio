@@ -37,6 +37,9 @@ spec:
           persistentVolumeClaim:
             claimName: workspace-pvc-{{PROJECT_ID}}
 
+      imagePullSecrets:
+        - name: ghcr-secret
+
       initContainers:
         - name: workspace-init
           image: amazon/aws-cli:latest
@@ -45,23 +48,45 @@ spec:
             - /bin/sh
             - -c
 
+          # Old Commands - if r2 had new files, and the pod didnt, then it was not updatig it
+          # args:
+          #   - |
+          #     set -e
+
+          #     echo "Checking workspace..."
+
+          #     echo "ProjectId: PROJECT_ID"
+
+          #     if [ "$(ls -A /workspace 2>/dev/null)" ]; then
+          #       echo "Workspace already exists. Skipping restore."
+          #       exit 0
+          #     fi
+
+          #     echo "Workspace empty. Restoring project..."
+
+          #     aws s3 sync \
+          #       s3://${R2_BUCKET}/projects/${PROJECT_ID}/ \
+          #       /workspace \
+          #       --endpoint-url=${R2_ENDPOINT}
+
+          #     echo "Workspace restored successfully."
+
+          # This will always sync pod with r2, and delete files that dont exist in r2 but in pod
+          # Potential Issue: There is an edge case where if the r2 is not synced yet and pod has the updated files
+          # the pull will remove the non-synced files
           args:
             - |
               set -e
 
-              echo "Checking workspace..."
+              echo "Syncing workspace..."
 
-              if [ "$(ls -A /workspace 2>/dev/null)" ]; then
-                echo "Workspace already exists. Skipping restore."
-                exit 0
-              fi
-
-              echo "Workspace empty. Restoring project..."
+              echo "Restoring project..."
 
               aws s3 sync \
                 s3://${R2_BUCKET}/projects/${PROJECT_ID}/ \
                 /workspace \
-                --endpoint-url=${R2_ENDPOINT}
+                --endpoint-url=${R2_ENDPOINT} \
+                --delete
 
               echo "Workspace restored successfully."
 
@@ -79,16 +104,10 @@ spec:
               value: "auto"
 
             - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: r2-secret
-                  key: accessKey
+              value: "{{R2_ACCESS_KEY}}"
 
             - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: r2-secret
-                  key: secretKey
+              value: "{{R2_SECRET_KEY}}"
 
           volumeMounts:
             - name: workspace-volume
@@ -108,11 +127,11 @@ spec:
           resources:
             # FUTURE Plan: Use ephemeral-storage to add space limits here
             requests:
-              cpu: "1"
-              memory: "1Gi"
+              cpu: "100m"
+              memory: "128Mi"
             limits:
-              cpu: "1"
-              memory: "1Gi"
+              cpu: "500m"
+              memory: "512Mi"
 
         - name: workspace-sync
           image: WORKSPACE_SYNC_IMAGE
@@ -136,16 +155,18 @@ spec:
               value: "{{SYNC_INTERVAL}}"
 
             - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: r2-secret
-                  key: accessKey
+              value: "{{R2_ACCESS_KEY}}"
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: r2-secret
+              #     key: accessKey
 
             - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: r2-secret
-                  key: secretKey
+              value: "{{R2_SECRET_KEY}}"
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: r2-secret
+              #     key: secretKey
 
           volumeMounts:
             - name: workspace-volume

@@ -58,7 +58,7 @@ export function Navbar() {
             <Code2 className="h-4 w-4" />
           </div>
 
-          <span>CodeRun</span>
+          <span>Code.io</span>
         </Link>
 
         <nav className="ml-6 hidden gap-1 md:flex">
@@ -77,16 +77,11 @@ export function Navbar() {
             </Link>
           </Show>
           <Link
-            href="/docs"
+            target="_blank"
+            href="https://github.com/Aman-Gupta-404/codeio"
             className="rounded-md px-3 py-1.5 text-sm hover:bg-accent"
           >
             Docs
-          </Link>
-          <Link
-            href="/pricing"
-            className="rounded-md px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            Pricing
           </Link>
         </nav>
 
@@ -119,14 +114,20 @@ export function Navbar() {
               <Link href="/" className="rounded-md p-3 hover:bg-accent">
                 Home
               </Link>
-              <Link href="/projects" className="rounded-md p-3 hover:bg-accent">
-                Projects
-              </Link>
-              <Link href="/docs" className="rounded-md p-3 hover:bg-accent">
+              <Show when={"signed-in"}>
+                <Link
+                  href="/projects"
+                  className="rounded-md p-3 hover:bg-accent"
+                >
+                  Projects
+                </Link>
+              </Show>
+              <Link
+                target="_blank"
+                href="https://github.com/Aman-Gupta-404/codeio"
+                className="rounded-md p-3 hover:bg-accent"
+              >
                 Docs
-              </Link>
-              <Link href="/pricing" className="rounded-md p-3 hover:bg-accent">
-                Pricing
               </Link>
 
               <ThemeToggle />

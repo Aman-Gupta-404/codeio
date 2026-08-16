@@ -9,13 +9,11 @@ export async function requireAuthMiddleware(
   next: NextFunction,
 ) {
   const auth = getAuth(req);
-  // const { userId } = auth;
-  const userId = "user_3F5iKWhQPRxn0P8Que3UrHzrQFC";
+  const { userId } = auth;
 
-  // TODO: undo this
-  // if (!userId) {
-  //   throw AppError.unauthorized();
-  // }
+  if (!userId) {
+    throw AppError.unauthorized();
+  }
 
   // make API call to fetch user details
   const user = await userService.getUserByClerkId(userId);

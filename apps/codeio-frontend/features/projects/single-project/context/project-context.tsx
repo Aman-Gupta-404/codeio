@@ -18,15 +18,18 @@ import { Events } from "@/data/events";
 import useProjectData from "../hooks/useProjectData";
 import { useProjectSocket } from "../hooks/useProjectSocket";
 import { getFileFromPath, nodeExists } from "../utils/helper";
+import { DebouncedFunc } from "lodash";
 
 type TerminalListener = (data: string) => void;
 
 type Context = {
+  terminalData: string;
+  userInactiveModal: boolean;
   fetchParentTree: () => void;
+  showInactiveModal: boolean;
   currentFile: SelectedFileState;
   send: (message: unknown) => void;
   selectFile: (path: string) => void;
-  terminalData: string;
   writeTerminal: (data: string) => void;
   connectionStatus: ConnectionStatusTypes;
   updateFileContent: (content: string) => void;
@@ -35,6 +38,10 @@ type Context = {
   createFolder: (path: string, name: string) => void;
   resizeTerminal: (cols: number, rows: number) => void;
   subscribeTerminal(listener: TerminalListener): () => void;
+  // updateProjectActivity: DebouncedFunc<
+  //   (type: "auto" | "manual") => Promise<void>
+  // >;
+  updateProjectActivity: (type: string) => void;
   deleteNode: (path: string, name: string, type: "file" | "folder") => void;
 };
 
@@ -44,10 +51,12 @@ const ProjectContext = createContext<Context | null>(null);
  * Project Context Provider
  */
 export function ProjectProvider({
+  showInactiveModal,
   children,
   projectId,
   wsUrl,
 }: {
+  showInactiveModal: boolean;
   children: React.ReactNode;
   projectId: string;
   wsUrl: string;
@@ -64,7 +73,7 @@ export function ProjectProvider({
     handleMessage,
     actions: projectDataActions,
     ...projectData
-  } = useProjectData();
+  } = useProjectData({ projectId });
 
   const { send, connectionStatus } = useProjectSocket({
     projectId,
@@ -237,7 +246,10 @@ export function ProjectProvider({
   return (
     <ProjectContext.Provider
       value={{
+        showInactiveModal,
+        updateProjectActivity: projectDataActions.updateProjectActivity,
         subscribeTerminal: projectDataActions.subscribeTerminal,
+        userInactiveModal: projectData.userInactiveModal,
         selectFile: projectDataActions.handleSelectFile,
         terminalData: projectData.terminalOutput,
         currentFile: projectData.selectedFile,

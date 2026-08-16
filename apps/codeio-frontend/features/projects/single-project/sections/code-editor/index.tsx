@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import EditorHeader from "./partials/editorHeader";
-import EditorBody from "./partials/editorBody";
-import StatusBar from "./partials/statusBar";
-import { useProject } from "../../context/project-context";
+import { useEffect, useState } from "react";
+
 import NoFile from "./partials/noFile";
+import StatusBar from "./partials/statusBar";
+import EditorBody from "./partials/editorBody";
+import EditorHeader from "./partials/editorHeader";
+import { useProject } from "../../context/project-context";
 import { useDebounce } from "@/features/shared/hooks/useDebounce";
 
-const INITIAL_CODE = `export default function Home() {
-  return (
-    <main>
-      <h1>Hello World</h1>
-    </main>
-  );
-}
-`;
-
 export default function CodeEditor() {
+  const [line, setLine] = useState(1);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [extention, setExtention] = useState("");
-  const [line, setLine] = useState(1);
   const [column, setColumn] = useState(1);
 
   const { currentFile, updateFileContent } = useProject();
+
   const debouncedCode = useDebounce(code, 1000);
 
   useEffect(() => {
@@ -42,7 +34,6 @@ export default function CodeEditor() {
   }, [currentFile]);
 
   useEffect(() => {
-    console.log("getting the debounced code: ", debouncedCode);
     updateFileContent(debouncedCode);
   }, [debouncedCode]);
 
@@ -50,7 +41,6 @@ export default function CodeEditor() {
     <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-background">
       {currentFile.path && <EditorHeader fileName={name} />}
 
-      {/* <EditorBody code={code} setCode={setCode} lines={lines} /> */}
       {currentFile.path ? (
         <>
           <EditorBody

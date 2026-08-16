@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
-  File,
   Folder,
   FolderOpen,
   FilePlus2,
@@ -16,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { getFileMeta } from "@/lib/get-file-meta";
 import { useProject } from "../../context/project-context";
 import { Events } from "@/data/events";
-import { Skeleton } from "@/components/ui/skeleton";
 import FileTreeSkeleton from "./partials/fileTreeSkeleton";
 import FolderChildrenSkeleton from "./partials/folderChildrenSkeleton";
 import EmptyFileTree from "./partials/emptyFileTree";
@@ -64,7 +62,7 @@ function FileTreeNode({
   onCreateFolder,
   onDeleteNode,
 }: FileTreeNodeProps) {
-  const [open, setOpen] = useState(depth < 1);
+  const [open, setOpen] = useState(false);
   const isFolder = node.type === "folder";
   const isSelected = selected === node.name;
 

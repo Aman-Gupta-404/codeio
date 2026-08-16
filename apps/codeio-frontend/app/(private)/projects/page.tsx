@@ -5,50 +5,62 @@ import { useEffect, useState } from "react";
 import {
   Search,
   Plus,
-  SquarePause,
   Play,
-  GitBranchIcon,
   Loader2,
+  ExternalLink,
+  SquarePause,
+  GitBranchIcon,
 } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Project } from "@/features/projects/types";
 import { projectsApi } from "@/apis/projects/projects.api";
 import { ProjectOptions } from "@/features/projects/components/projectOptions";
 import { CreateProjectModal } from "@/features/projects/modals/create-project-modal";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
+import { formatDate } from "@/lib/utils";
+import { usePolling } from "@/features/shared/hooks/usePolling";
+import { AxiosResponse } from "axios";
+import { ProjectStatusResponse } from "@/apis/projects/projects.types";
 
 type StatusLoadingtype = {
   loading: boolean;
-  projectId: null | string;
+  projectIds: string[];
 };
 
 export default function ProjectsPage() {
   const [openCreateProject, setOpenCreateProject] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [statusLoading, setStatusLoading] = useState<StatusLoadingtype>({
-    loading: false,
-    projectId: null,
-  });
+  // const [statusLoading, setStatusLoading] = useState<StatusLoadingtype>({
+  //   loading: true,
+  //   projectIds: [],
+  // });
+  const [statusLoading, setStatusLoading] = useState<string[]>([]);
 
   const router = useRouter();
+
+  const { data, poll, stop } = usePolling<AxiosResponse<ProjectStatusResponse>>(
+    {
+      interval: 10000,
+    },
+  );
+
+  const getDeleteStatus = async ({ projectId }: { projectId: string }) => {
+    return await projectsApi.getProjectStatus({
+      action: "stopping",
+      projectId,
+    });
+  };
 
   const fetchProjects = async () => {
     try {
@@ -78,12 +90,26 @@ export default function ProjectsPage() {
     toast.warning("Feature not yet available");
   };
 
-  const handlePlayProject = (projectId: string) => {
+  const handlePlayProject = async (projectId: string) => {
     if (!projectId) {
       toast.error("No project found");
     }
+    try {
+      setStatusLoading((p) => [...p, projectId]);
 
-    router.push(`/projects/${projectId}`);
+      const eligibility = await projectsApi.getRunProjectEligibility();
+      if (eligibility.status === 200 && eligibility.data.eligible) {
+        router.push(`/projects/${projectId}`);
+      } else {
+        toast.error("Please stop other workspaces to run this project!");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.message || "Error in running the project, please try again",
+      );
+    } finally {
+      setStatusLoading((p) => p.filter((id) => id !== projectId));
+    }
   };
 
   const handleStopProject = async (projectId: string) => {
@@ -91,36 +117,69 @@ export default function ProjectsPage() {
       toast.error("No project found");
     }
 
-    setStatusLoading({ loading: true, projectId });
+    setStatusLoading((p) => [...p, projectId]);
     try {
       const res = await projectsApi.runProject({ projectId, status: "stop" });
       if (res.status === 200) {
         const d = res.data;
-        if (d.status === "down") {
-          toast.success("Project stopped successfully!");
-          setProjects((p) =>
-            p.map((item) => {
-              if (item.id !== projectId) return item;
-              return { ...item, status: "stopped" };
-            }),
-          );
-        }
+        // if (d.status === "down") {
+        //   toast.success("Project stopped successfully!");
+        //   setProjects((p) =>
+        //     p.map((item) => {
+        //       if (item.id !== projectId) return item;
+        //       return { ...item, status: "stopped" };
+        //     }),
+        //   );
+        // }
+        poll(getDeleteStatus, { projectId });
       } else {
+        setStatusLoading((p) => p.filter((id) => id !== projectId));
         toast.error(res?.data?.error || "Error in stopping the project");
       }
     } catch (error: any) {
+      setStatusLoading((p) => p.filter((id) => id !== projectId));
+
       toast.error(error?.message || "Error in stopping the project");
-    } finally {
-      setStatusLoading({ loading: false, projectId: null });
     }
+    // finally {
+    //   setStatusLoading({ loading: false, projectId: null });
+    // }
   };
 
   useEffect(() => {
     fetchProjects();
   }, []);
 
+  // handle the project status api outputs
+  useEffect(() => {
+    if (!data) return;
+
+    if (data.status !== 200) {
+      stop();
+      toast.error("Error in running project");
+      notFound();
+    }
+
+    const statusData = data.data;
+    if (statusData.status === "deleted") {
+      const projectId = data.data.projectId;
+      // the project is running
+      setProjects((p) =>
+        p.map((item) => {
+          if (item.id !== projectId) return item;
+          return { ...item, status: "stopped" };
+        }),
+      );
+
+      setStatusLoading((p) => p.filter((id) => id !== projectId));
+
+      toast.success("Project stopped successfully!");
+      stop();
+    }
+  }, [data, stop]);
+
   return (
-    <div className="relative w-full min-h-[calc(100vh-56px)] px-6 py-6 lg:px-8 mt-[56px] max-w-7xl mx-auto">
+    <div className="relative w-full px-6 py-6 lg:px-8 mt-[56px] max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
@@ -137,7 +196,8 @@ export default function ProjectsPage() {
         </Button>
       </div>
 
-      <Card className="mb-4">
+      {/* filters section, removed for now */}
+      {/* <Card className="mb-4">
         <CardContent className="flex flex-wrap gap-3 p-4">
           <div className="relative min-w-[260px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -170,7 +230,7 @@ export default function ProjectsPage() {
             </SelectContent>
           </Select>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Project List */}
       <Card className="overflow-hidden p-0">
@@ -205,15 +265,25 @@ export default function ProjectsPage() {
                 >
                   {/* Icon */}
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <GitBranchIcon className="h-5 w-5 text-primary" />
+                    {/* <GitBranchIcon className="h-5 w-5 text-primary" /> */}
+                    <Icon
+                      className="h-5 w-5 text-primary"
+                      icon={
+                        project.language === "node"
+                          ? "vscode-icons:file-type-node"
+                          : "material-icon-theme:python"
+                      }
+                    />
                   </div>
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{project.title}</div>
+                    <div className="truncate text-sm font-medium">
+                      {project.title}
+                    </div>
 
-                    <div className="truncate text-sm text-muted-foreground">
-                      {project.slug}
+                    <div className="truncate text-xs text-muted-foreground">
+                      Created On: {formatDate(project.createdAt)}
                     </div>
                   </div>
 
@@ -225,8 +295,7 @@ export default function ProjectsPage() {
                       {project.updated}
                     </div>
 
-                    {statusLoading.projectId === project.id &&
-                    statusLoading.loading ? (
+                    {statusLoading.includes(project.id) ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <div
@@ -240,16 +309,40 @@ export default function ProjectsPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           size="icon"
                           variant="ghost"
                           disabled={
-                            statusLoading.projectId === project.id &&
-                            statusLoading.loading
+                            statusLoading.includes(project.id) ||
+                            project.status !== "running"
                           }
+                          onClick={() => {
+                            router.push(`/projects/${project.id}`);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>
+                        <p>
+                          {project.status === "running"
+                            ? "Open Project"
+                            : "Start the project to run it"}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="cursor-pointer"
+                          disabled={statusLoading.includes(project.id)}
                           onClick={() => {
                             if (project.status === "running") {
                               handleStopProject(project.id);

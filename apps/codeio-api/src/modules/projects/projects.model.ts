@@ -14,6 +14,7 @@ export interface IProject extends Document {
   userId: ObjectId | string;
   status: projectStatus;
 
+  lastActive: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,10 +50,16 @@ const ProjectSchema = new Schema<IProject>(
 
     assetsUrl: String,
 
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+
     createdAt: {
       type: Date,
       default: Date.now,
     },
+
     updatedAt: {
       type: Date,
       default: Date.now,
