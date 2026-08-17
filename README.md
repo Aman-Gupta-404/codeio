@@ -8,6 +8,18 @@ When a user creates a project, CodeIO dynamically provisions a dedicated Kuberne
 
 The platform runs locally using KIND and is deployed to a managed Kubernetes cluster using Civo.
 
+## Live Project Access
+
+- [https://codeio.amangupta.work](https://codeio.amangupta.work)
+
+## Screen Shots
+
+<div style="display: gird; gridTemplateColumns: 1fr 1fr;gap: 15px">
+  <img src="project-documentation/images/home-preview.png" width="48%" />
+  <img src="project-documentation/images/projects-preview.png" width="48%" />
+  <img src="project-documentation/images/editor-preview.png" width="48%" />
+</div>
+
 ---
 
 ## Table of Contents
@@ -25,17 +37,11 @@ The platform runs locally using KIND and is deployed to a managed Kubernetes clu
 - [Resource Management](#resource-management)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-<!-- - [Local Development](#local-development)
-- [Environment Variables](#environment-variables)
-- [Production Deployment](#production-deployment)
-- [CI/CD](#cicd) -->
 - [Engineering Decisions](#engineering-decisions)
 - [Challenges](#challenges)
 - [Scalability](#scalability)
 - [Monitoring](#monitoring)
-<!-- - [Future Improvements](#future-improvements) -->
-- [Screenshots](#screenshots)
-- [Demo](#demo)
+- [Screenshots & Demo](#screenshots)
 - [Author](#author)
 
 ---
@@ -152,7 +158,6 @@ NGINX Ingress
  └── /api ──────► Node.js API
                        │
                        ├── MongoDB
-                       ├── Redis
                        ├── Object Storage
                        └── Kubernetes API
 ```
@@ -748,7 +753,7 @@ Kubernetes Services
 ## Frontend
 
 - Next.js
-- React
+- Shadcn UI
 - TypeScript
 - Tailwind CSS
 - Clerk
@@ -762,10 +767,8 @@ Kubernetes Services
 - TypeScript
 - MongoDB
 - Mongoose
-- Redis
 - Kubernetes API
 - WebSockets
-- Socket.IO
 - node-cron
 
 ## Infrastructure
@@ -774,22 +777,12 @@ Kubernetes Services
 - Kubernetes
 - KIND
 - Civo Kubernetes
-- K3s
-- NGINX Ingress
-- Cilium
-- cert-manager
-- Metrics Server
 
 ## Storage
 
 - MongoDB
 - Kubernetes PersistentVolumeClaims
-- Cloudflare R2 / S3-compatible object storage
-
-## Monorepo
-
-- Turborepo
-- pnpm
+- Cloudflare R2 (S3-compatible object storage)
 
 ---
 
@@ -809,22 +802,13 @@ codeio/
 │   └── workspace-gateway/
 │       └── WebSocket gateway
 │
-├── packages/
-│   └── Shared packages
-│
 ├── k8s/
-│   ├── namespace/
-│   ├── deployments/
-│   ├── ingress/
-│   ├── secrets/
-│   └── ...
+│   └── All Services manifest files
 │
 ├── package.json
 ├── pnpm-workspace.yaml
 └── turbo.json
 ```
-
-TODO: Update the `packages/` and `k8s/` sections with the exact directory structure from the repository.
 
 ---
 
@@ -916,7 +900,7 @@ Object storage provides another persistence layer for project workspaces.
 
 It allows the workspace to be restored when a new worker environment is created.
 
-The current implementation uses an S3-compatible object storage API.
+The current implementation uses cloudflare r2 which is an S3-compatible object storage API.
 
 ---
 
@@ -925,15 +909,6 @@ The current implementation uses an S3-compatible object storage API.
 KIND provides a lightweight local Kubernetes environment.
 
 It allows the same Kubernetes concepts used in production to be tested locally:
-
-```text
-Deployments
-Services
-PVCs
-Ingress
-RBAC
-ServiceAccounts
-```
 
 This helps maintain local/production parity.
 
@@ -995,9 +970,9 @@ to provide persistence.
 
 ## WebSocket Routing
 
-Traditional HTTP routing is relatively straightforward because the target service is usually known in advance.
+Traditional HTTP routing is a short lived connection, and not suitable for real time updates like read/write file and using terminal
 
-With project-specific workspaces, the gateway must determine which worker belongs to the incoming project.
+With project-specific workspaces, the gateway must determine which worker belongs to the incoming project and forward the request to it.
 
 The project ID is therefore encoded into the WebSocket hostname:
 
@@ -1039,7 +1014,7 @@ The current production deployment is intentionally constrained because the appli
 The worker concurrency is currently planned to be limited to approximately:
 
 ```text
-3–4 concurrent workers
+1 concurrent worker per user
 ```
 
 This prevents a small Kubernetes cluster from being overwhelmed by unbounded user workloads.
